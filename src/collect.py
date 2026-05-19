@@ -256,7 +256,7 @@ def collect_all_ranks(headers):
         }
         target = 51 if target_rank == "bronze-3" else 17
         all_rows = collect_until_target(rank_label, target_rank, params, headers, target, max_checked=MAX_CHECKED[rank_label])
-        save_rows_to_csv(all_rows, f"data/{target_rank}_test_rows.csv")
+        save_rows_to_csv(all_rows, f"data/csv/{target_rank}_rows.csv")
         print(target_rank, ".csv created.")
 
         save_rows_to_database(all_rows, "data/raw/database.db", "player_stats")
