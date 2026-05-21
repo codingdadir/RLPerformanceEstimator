@@ -1,19 +1,16 @@
 
 import pickle
 from pathlib import Path
-import sklearn
 import pandas as pd
 import streamlit as st
 import requests
 from dotenv import load_dotenv
 import os
-from pprint import pprint
 import sys
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_DIR))
 
-from src.collect import extract_player_stats
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
@@ -26,9 +23,10 @@ headers = {
 st.set_page_config(page_title="What Rank Did You Play Like?", page_icon="🏎️", layout="wide")
 
 st.title("What Rank Did You Play Like?")
+st.write("Paste a Ballchasing replay URL, select your player, and the model will estimate what broad rank your performance looked like.")
 
-MODEL_PATH = Path(__file__).resolve().parents[2] / "model" / "model.pkl"
-FEATURES_PATH = Path(__file__).resolve().parents[2] / "model" / "features.pkl"
+MODEL_PATH = Path(__file__).resolve().parents[2] / "model" / "log_reg_broad_rank_model_v2.pkl"
+FEATURES_PATH = Path(__file__).resolve().parents[2] / "model" / "features_v2.pkl"
 RANK_ICON_DIR = Path(__file__).resolve().parents[2] / "Rank Icons"
 RANK_IMAGES = {
     "gold": RANK_ICON_DIR / "gold-1.png",
@@ -62,27 +60,15 @@ def flatten_stats(stats):
 @st.dialog("Replay not found")
 def replay_not_found():
     st.write("Could not fetch this replay. Check that the URL or replay ID is correct.")
-    st.write("Also make sure the replay is public on Ballchasing.")
+    st.write("Also make sure the replay is public on Ballchasing, and the gamemode is Ranked Standard.")
 
-c1, c2 = st.columns([1.5, 1])
 
-with c1:
-    replay_url = st.text_input("Enter BallChasing URL or Replay ID:", value="https://ballchasing.com/replay/7263fbda-ee32-4d5c-b892-bf712d69d744", placeholder="https://ballchasing.com/replay/xxx...")
-
-with c2:
-    options = [
-         "Random Forest exact-tier model: 21.7% Accuracy",
-         "Random Forest broad-rank model: 53.3% Accuracy",
-         "Logistic Regression broad-rank model: Coming Soon"
-         ]
-    selected_model = st.selectbox("What Model Would You Like to Use:", options=options, placeholder="Select Model", disabled=True)
+replay_url = st.text_input("Enter BallChasing URL or Replay ID:", value="https://ballchasing.com/replay/7263fbda-ee32-4d5c-b892-bf712d69d744", placeholder="https://ballchasing.com/replay/xxx...")
 
 _, c2, _ = st.columns([1, 0.2, 1])
 
-
 with c2:
     run_button = st.button("Go!", type="primary", width="stretch")
-
 
 if "replay_data" not in st.session_state:
     st.session_state.replay_data = None
@@ -93,10 +79,6 @@ if "selected_player" not in st.session_state:
 if "selected_team" not in st.session_state:
     st.session_state.selected_team = None
 
-
-
-
-
 if run_button:
     replay_id = get_replay_id(replay_url)
 
@@ -104,24 +86,26 @@ if run_button:
 
     replay_response = requests.get(f"https://ballchasing.com/api/replays/{replay_id}",headers=headers, timeout=15)
 
-    if replay_response.status_code != 200:
+    if (replay_response.status_code != 200):
         replay_not_found()
         st.stop()
+        
+    data = replay_response.json()
 
-    st.session_state.replay_data = replay_response.json()
+    if data.get("playlist_id") != "ranked-standard":
+        st.error("This replay is not Ranked-Standard (Ranked 3v3).")
+        st.stop()
+         
+    st.session_state.replay_data = data
     st.session_state.selected_player = None
     st.session_state.selected_team = None
-
-    st.session_state.replay_data = replay_response.json()
-
-   
 
 data = st.session_state.replay_data
 
 if data:
     st.markdown("<h3 style='text-align: center;'>Which player are you?</h3>", unsafe_allow_html=True)
-
     flex = st.container(horizontal=True, horizontal_alignment="distribute")
+
     for team in ["blue", "orange"]:
         for player in data[team]["players"]:
             player_name = player.get("name")
@@ -132,7 +116,6 @@ if data:
 
     if st.session_state.selected_player:
         player = st.session_state.selected_player
-        
         
         player_rank = player.get("rank", {})
         actual_rank = player_rank.get("id")
@@ -153,12 +136,11 @@ if data:
 
         pretty_rank = prediction.replace("_", " ").title()
         
-                
         _, center, _ = st.columns([1, 1, 1])
 
         with center:
             st.markdown(
-                f"<h2 style='text-align: center;'>{pretty_rank}</h2>",
+                f"<h2 style='text-align: center;'>{st.session_state.selected_player.get('name')} played like a {pretty_rank}.</h2>",
                 unsafe_allow_html=True
             )
 
