@@ -39,6 +39,17 @@ RANK_TIERS = {
     "grand-champion-3": 21
 }
 TARGET_RANKS = [
+    ("gold", "gold-1"),
+    ("gold", "gold-2"),
+    ("gold", "gold-3"),
+
+    ("platinum", "platinum-1"),
+    ("platinum", "platinum-2"),
+    ("platinum", "platinum-3"),
+
+    ("diamond", "diamond-1"),
+    ("diamond", "diamond-2"),
+    ("diamond", "diamond-3"),
 
     ("champion", "champion-1"),
     ("champion", "champion-2"),
@@ -60,11 +71,11 @@ MAX_TIER_DIFF = {
 MAX_CHECKED = {
     "bronze": 2000,
     "silver": 1000,
-    "gold": 500,
-    "platinum": 500,
-    "diamond": 500,
-    "champion": 1000,
-    "grand-champion": 3000,
+    "gold": 5000,
+    "platinum": 5000,
+    "diamond": 5000,
+    "champion": 10000,
+    "grand-champion": 30000,
 }
 
 
@@ -254,12 +265,10 @@ def collect_all_ranks(headers):
             "playlist": "ranked-standard",
             "count": 50
         }
-        target = 51 if target_rank == "bronze-3" else 17
+        target = 100 
         all_rows = collect_until_target(rank_label, target_rank, params, headers, target, max_checked=MAX_CHECKED[rank_label])
-        save_rows_to_csv(all_rows, f"data/csv/{target_rank}_rows.csv")
-        print(target_rank, ".csv created.")
 
-        save_rows_to_database(all_rows, "data/raw/database.db", "player_stats")
+        save_rows_to_database(all_rows, "data/raw/database_v2.db", "player_stats")
         print(target_rank, " Added to DB.")
 
 
