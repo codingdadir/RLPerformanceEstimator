@@ -1,6 +1,6 @@
 from pathlib import Path
 import sqlite3
-
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -196,7 +196,7 @@ st.bar_chart(
     rank_counts,
     x="rank_name",
     y="player_rows",
-    use_container_width=True
+    width="stretch"
 )
 
 st.write(
@@ -229,7 +229,7 @@ top_correlations["stat"] = top_correlations["stat"].map(lambda x: STAT_NAMES.get
 
 st.dataframe(
     top_correlations,
-    use_container_width=True,
+    width="stretch",
     hide_index=True
 )
 
@@ -243,7 +243,7 @@ st.bar_chart(
     x="stat",
     y="correlation",
     horizontal=True,
-    use_container_width=True
+    width="stretch"
 )
 
 
@@ -293,13 +293,33 @@ rank_means["rank_name"] = pd.Categorical(
     ordered=True
 )
 
-st.line_chart(
-    rank_means,
-    x="rank_name",
-    y=selected_stat,
-    y_label=STAT_NAMES.get(selected_stat, selected_stat),
-    use_container_width=True
+# st.line_chart(
+#     rank_means,
+#     x="rank_name",
+#     y=selected_stat,
+#     y_label=STAT_NAMES.get(selected_stat, selected_stat),
+#     width="stretch"
+# )
+
+chart = alt.Chart(rank_means).mark_line(point=True).encode(
+    x=alt.X(
+        "rank_name:N",
+        sort=rank_order,
+        title="Rank"
+    ),
+    y=alt.Y(
+        f"{selected_stat}:Q",
+        title=STAT_NAMES.get(selected_stat, selected_stat),
+        scale=alt.Scale(zero=False)
+    ),
+    tooltip=[
+        alt.Tooltip("rank_name:N", title="Rank"),
+        alt.Tooltip(f"{selected_stat}:Q", title=STAT_NAMES.get(selected_stat, selected_stat))
+    ]
 )
+
+st.altair_chart(chart, width="stretch")
+
 st.divider()
 
 
