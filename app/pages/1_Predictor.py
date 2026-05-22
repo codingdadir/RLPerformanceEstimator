@@ -14,7 +14,7 @@ sys.path.append(str(ROOT_DIR))
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-TOKEN = os.getenv("BALLCHASING_TOKEN")
+TOKEN = st.secrets["BALLCHASING_TOKEN"]
 
 headers = {
     "Authorization": TOKEN
@@ -84,9 +84,10 @@ if run_button:
 
     print("Replay ID: ", replay_id)
 
-    # if not replay_id:
-    #     st.error("Enter a Replay.")
-    #     st.stop()
+    if not replay_id:
+        st.error("Enter a Replay.")
+        print("E")
+        st.stop()
 
     replay_response = requests.get(f"https://ballchasing.com/api/replays/{replay_id}",headers=headers, timeout=15)
 

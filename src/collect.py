@@ -274,7 +274,7 @@ def collect_all_ranks(headers):
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-TOKEN = os.getenv("BALLCHASING_TOKEN")
+TOKEN = st.secrets["BALLCHASING_TOKEN"]
 
 headers = {
     "Authorization": TOKEN
